@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs f0: tmux, treehouse and the CLI, plus, optionally, the bundled Neovim, tmux
-# and Ghostty configs.
+# Installs f0: tmux, treehouse, Rust when cargo is missing, and the CLI, plus,
+# optionally, the bundled Neovim, tmux and Ghostty configs.
 # Safe to run again: existing f0 links are kept, and any other config is only
 # replaced after asking (or with --yes), with a backup first.
 set -euo pipefail
@@ -12,13 +12,16 @@ Usage: install.sh [options]
   --no-nvim          keep your own Neovim config
   --no-tmux-config   keep your own tmux config
   --no-ghostty       keep your own Ghostty config
-  --cli-only         same as the three above: only tmux, treehouse and the f0 CLI
+  --cli-only         same as the three above: only tmux, treehouse, Rust and the f0 CLI
   --yes              replace existing configs without asking (they are backed up)
   -h, --help         show this help
 EOF
 }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CARGO_BIN="${CARGO_HOME:-$HOME/.cargo}/bin"
+# ensure_cargo may extend PATH for this run; the warning at the end checks the user's own.
+USER_PATH="$PATH"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 STAMP="$(date +%Y%m%d%H%M%S)"
 
@@ -71,10 +74,27 @@ brew_formula() {
   brew list --formula "$1" >/dev/null 2>&1 || brew install "$1"
 }
 
+# A rustup install that is not in PATH yet (new shell not opened) still counts.
+ensure_cargo() {
+  command -v cargo >/dev/null && return
+  if [ -x "$CARGO_BIN/cargo" ]; then
+    export PATH="$CARGO_BIN:$PATH"
+    return
+  fi
+  info "installing Rust to build f0"
+  brew_formula rust
+  if ! command -v cargo >/dev/null; then
+    echo "cargo is still not in PATH after installing Rust; open a new shell and run install.sh again" >&2
+    exit 1
+  fi
+}
+
 if ! command -v brew >/dev/null; then
   echo "Homebrew is required: https://brew.sh" >&2
   exit 1
 fi
+
+ensure_cargo
 
 brew_formula tmux
 # treehouse may come from its own installer instead of Homebrew; any copy in PATH works.
@@ -97,10 +117,16 @@ mkdir -p "$CONFIG/f0/projects"
 info "building f0"
 cargo install --path "$ROOT/crates/f0" --locked --quiet
 
+case ":$USER_PATH:" in
+  *":$CARGO_BIN:"*) ;;
+  *) info "warning: $CARGO_BIN, where f0 is installed, is not in PATH; add this to your shell profile:"
+     printf '    export PATH="%s:$PATH"\n' "$CARGO_BIN" ;;
+esac
+
 # A tmux server that was already running gets the new key bindings without a reload.
 if tmux list-sessions >/dev/null 2>&1; then
   info "binding f0 keys in the running tmux server"
-  "${CARGO_HOME:-$HOME/.cargo}/bin/f0" keys || true
+  "$CARGO_BIN/f0" keys || true
 fi
 
 info "done, run \`f0 doctor\`"
