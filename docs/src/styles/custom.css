@@ -143,6 +143,15 @@ starlight-lang-select label {
 	border-color: var(--sl-color-hairline-light);
 }
 
+/* Muted like the rest of the header controls, instead of Starlight's accent. */
+.social-icons a {
+	color: var(--sl-color-gray-3);
+}
+
+.social-icons a:hover {
+	color: var(--sl-color-white);
+}
+
 /* Sidebar: plain group titles and muted links; the current page is tinted, not filled. */
 .sidebar-content {
 	padding-top: 1.5rem;

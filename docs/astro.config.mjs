@@ -13,6 +13,8 @@ export default defineConfig({
 				light: './src/assets/logo-light.svg',
 				dark: './src/assets/logo-dark.svg',
 			},
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/falcondpr/f0' }],
+			editLink: { baseUrl: 'https://github.com/falcondpr/f0/edit/main/docs/' },
 			customCss: ['./src/styles/custom.css'],
 			components: {
 				ThemeSelect: './src/components/ThemeSelect.astro',
