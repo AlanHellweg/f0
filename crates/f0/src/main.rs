@@ -1,3 +1,4 @@
+mod appearance;
 mod commands;
 mod config;
 mod edit;

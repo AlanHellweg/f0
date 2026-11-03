@@ -188,7 +188,7 @@ f0 keys
 
 ## f0 doctor
 
-Check tools, global defaults, project configs and the tmux keys. Exits with an error when something required is missing.
+Check tools, global defaults, project configs, the tmux keys and what keeps the bundled theme from applying. Exits with an error when something required is missing.
 
 | Check | Required |
 |---|---|
@@ -198,6 +198,8 @@ Check tools, global defaults, project configs and the tmux keys. Exits with an e
 | Each project's `repo` and worktree include file | Yes |
 | The running tmux server binds the key that closes a task (skipped with no server or with `[keys] done = false`) | Yes |
 | `gh`, `rg`, Ghostty | No |
+| With the bundled tmux config linked: tmux 3.8 or later, which the theme needs | Yes |
+| With the bundled Ghostty config linked: no `background`, `foreground`, `palette`, `cursor-*` or `selection-*` lines in other Ghostty config files, listed with their file and line | No |
 
 ## Environment variables
 
