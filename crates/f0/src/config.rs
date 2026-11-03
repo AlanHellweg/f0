@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -584,10 +585,22 @@ pub fn config_dir() -> Result<PathBuf, F0Error> {
     if let Some(dir) = std::env::var_os("F0_CONFIG_DIR") {
         return Ok(PathBuf::from(dir));
     }
-    if let Some(xdg) = std::env::var_os("XDG_CONFIG_HOME") {
-        return Ok(PathBuf::from(xdg).join("f0"));
+    Ok(xdg_config_home()?.join("f0"))
+}
+
+pub fn xdg_config_home() -> Result<PathBuf, F0Error> {
+    config_home(std::env::var_os("XDG_CONFIG_HOME"), home_dir)
+}
+
+/// The XDG spec treats an empty variable as unset.
+fn config_home(
+    xdg: Option<OsString>,
+    home: impl FnOnce() -> Result<PathBuf, F0Error>,
+) -> Result<PathBuf, F0Error> {
+    match xdg.filter(|dir| !dir.is_empty()) {
+        Some(dir) => Ok(PathBuf::from(dir)),
+        None => Ok(home()?.join(".config")),
     }
-    Ok(home_dir()?.join(".config").join("f0"))
 }
 
 pub fn home_dir() -> Result<PathBuf, F0Error> {
@@ -700,6 +713,15 @@ fn expand_home(raw: &str, home: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn empty_xdg_config_home_means_the_default() {
+        let home = || Ok(PathBuf::from("/home/me"));
+        let config_home = |xdg: Option<&str>| config_home(xdg.map(OsString::from), home).unwrap();
+        assert_eq!(config_home(None), Path::new("/home/me/.config"));
+        assert_eq!(config_home(Some("")), Path::new("/home/me/.config"));
+        assert_eq!(config_home(Some("/xdg")), Path::new("/xdg"));
+    }
 
     fn parse(source: &str) -> Result<Project, F0Error> {
         Project::from_toml(
