@@ -581,7 +581,7 @@ starlight-toc a[aria-current='true']::before {
 	font-size: var(--sl-text-sm);
 }
 
-starlight-menu-button button {
+.sl-menu-button {
 	border: 1px solid var(--sl-color-hairline-light);
 	background-color: var(--f0-surface);
 	box-shadow: none;
