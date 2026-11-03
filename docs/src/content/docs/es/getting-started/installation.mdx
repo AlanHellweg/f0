@@ -10,10 +10,9 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 ## Requisitos
 
 - macOS con [Homebrew](https://brew.sh)
-- Rust (`cargo`) para compilar la CLI
 - La CLI de tu agente de IA: [Claude Code](https://code.claude.com/docs) por defecto, o cualquier otra que [configures como agente](/es/reference/configuration/#agente-de-ia)
 
-El instalador agrega [treehouse](#treehouse) si falta.
+El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si faltan.
 
 ## Instalar
 
@@ -86,4 +85,4 @@ Cada tarea de f0 corre en su propio worktree de treehouse, así que treehouse es
 
 ## Desinstalar
 
-Borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse` si nada más lo usa.
+Borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse`, y Rust con `brew uninstall rust` si lo agregó el instalador, cuando nada más los use.
