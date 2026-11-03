@@ -30,7 +30,7 @@ config.color_scheme = appearance:find("Dark") and "Catppuccin Mocha" or "Catppuc
 
 ## Tu propio config de Ghostty
 
-Ghostty lee más de un archivo de config, y los colores definidos en cualquiera de ellos le ganan al tema. Si el margen o el cursor siguen con sus colores viejos, saca las líneas `background`, `foreground`, `palette` y similares de tus otros archivos de config de Ghostty, como `~/Library/Application Support/com.mitchellh.ghostty/config`.
+Ghostty lee más de un archivo de config, y los colores definidos en cualquiera de ellos le ganan al tema. Si el margen o el cursor siguen con sus colores viejos, saca las líneas `background`, `foreground`, `palette` y similares de tus otros archivos de config de Ghostty, como `~/Library/Application Support/com.mitchellh.ghostty/config`. [`f0 doctor`](/es/reference/cli/#f0-doctor) lista esas líneas con su archivo y número de línea, y avisa si tmux es anterior a 3.8.
 
 ## Cambiar el tema
 

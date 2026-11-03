@@ -188,7 +188,7 @@ f0 keys
 
 ## f0 doctor
 
-Revisa herramientas, valores globales, proyectos y las teclas de tmux. Termina con error si falta algo obligatorio.
+Revisa herramientas, valores globales, proyectos, las teclas de tmux y lo que impide que se aplique el tema incluido. Termina con error si falta algo obligatorio.
 
 | Chequeo | Obligatorio |
 |---|---|
@@ -198,6 +198,8 @@ Revisa herramientas, valores globales, proyectos y las teclas de tmux. Termina c
 | `repo` y archivo de includes de cada proyecto | Sí |
 | El servidor de tmux en ejecución define la tecla que cierra una tarea (se omite sin servidor o con `[keys] done = false`) | Sí |
 | `gh`, `rg`, Ghostty | No |
+| Con la config de tmux incluida enlazada: tmux 3.8 o posterior, que el tema necesita | Sí |
+| Con la config de Ghostty incluida enlazada: ninguna línea `background`, `foreground`, `palette`, `cursor-*` o `selection-*` en otros archivos de config de Ghostty, que se listan con su archivo y línea | No |
 
 ## Variables de entorno
 
