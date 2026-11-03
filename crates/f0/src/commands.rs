@@ -5,7 +5,7 @@ use anyhow::{Context, bail};
 
 use crate::config::{self, Agent, Project};
 use crate::error::F0Error;
-use crate::{git, layout, process, tmux, treehouse};
+use crate::{appearance, git, layout, process, tmux, treehouse};
 
 pub fn new(
     ticket: &str,
@@ -503,6 +503,8 @@ pub fn doctor() -> anyhow::Result<()> {
     println!("\ntmux keys");
     problems += report_done_key(config::load_keys(&config_dir)?.done.as_deref())?;
 
+    problems += report_appearance()?;
+
     println!("\nProjects ({})", config_dir.join("projects").display());
     let projects = match config::load_projects(&config_dir, &defaults) {
         Ok(projects) => projects,
@@ -735,6 +737,65 @@ fn report_done_key(key: Option<&str>) -> anyhow::Result<u32> {
         ),
         None => report(&format!("{label}: not bound, run `f0 keys`"), false, true),
     })
+}
+
+/// Checks what keeps the bundled theme from applying, only where the bundled configs
+/// are linked: your own tmux or Ghostty config is yours to theme.
+fn report_appearance() -> anyhow::Result<u32> {
+    let home = config::home_dir()?;
+    let xdg = config::xdg_config_home()?;
+    if !appearance::is_bundled(&xdg.join("tmux"), Path::new("config/tmux")) {
+        return Ok(0);
+    }
+    println!("\nAppearance");
+    let (min_major, min_minor) = appearance::MIN_TMUX;
+    let version = process::output("tmux", ["-V"], None).unwrap_or_default();
+    let problems = match appearance::tmux_version(&version) {
+        Some(found) if found >= appearance::MIN_TMUX => {
+            report(&format!("`{version}` has the theme options"), true, true)
+        }
+        Some(_) => report(
+            &format!(
+                "`{version}` has no theme options, update to {min_major}.{min_minor} or later"
+            ),
+            false,
+            true,
+        ),
+        None => report(
+            &format!("tmux version unknown, the theme needs {min_major}.{min_minor} or later"),
+            false,
+            false,
+        ),
+    };
+
+    if appearance::is_bundled(
+        &xdg.join("ghostty/config"),
+        Path::new("config/ghostty/config"),
+    ) {
+        report_ghostty_colors(&home, &xdg);
+    }
+    Ok(problems)
+}
+
+/// Colors set in another Ghostty config file win over the bundled theme around tmux.
+/// Only a warning: the panes are painted by tmux and look right anyway.
+fn report_ghostty_colors(home: &Path, xdg: &Path) {
+    let mut found = false;
+    for file in appearance::other_ghostty_files(home, xdg) {
+        let Ok(text) = std::fs::read_to_string(&file) else {
+            continue;
+        };
+        for (line, key) in appearance::color_overrides(&text) {
+            found = true;
+            println!(
+                "  - {}:{line} sets `{key}`, which overrides the Ghostty theme; remove that line",
+                file.display()
+            );
+        }
+    }
+    if !found {
+        report("Ghostty colors come from the bundled theme", true, false);
+    }
 }
 
 /// Checks the program a pane will run; a missing one would leave the pane broken.
