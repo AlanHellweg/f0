@@ -16,6 +16,7 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/falcondpr/f0' }],
 			editLink: { baseUrl: 'https://github.com/falcondpr/f0/edit/main/docs/' },
 			customCss: ['./src/styles/custom.css'],
+			disable404Route: true,
 			components: {
 				ThemeSelect: './src/components/ThemeSelect.astro',
 			},

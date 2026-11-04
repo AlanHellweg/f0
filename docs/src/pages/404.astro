@@ -1,0 +1,22 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+// Vercel serves this one page for every missing URL, whatever its locale, so it stays in English.
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Page not found',
+		description: 'This page does not exist or has moved.',
+		template: 'splash',
+		editUrl: false,
+		pagefind: false,
+		hero: {
+			tagline: 'This page does not exist or has moved. Search the docs, or start from one of these.',
+			actions: [
+				{ text: 'Home', link: '/', icon: 'right-arrow' },
+				{ text: 'Cheatsheet', link: '/cheatsheet/', variant: 'minimal' },
+			],
+		},
+	}}
+/>
