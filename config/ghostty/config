@@ -10,3 +10,10 @@ window-padding-color = extend
 macos-option-as-alt = true
 window-save-state = always
 shell-integration-features = no-cursor
+
+# Panes belong to tmux: Ghostty splits would sit outside the f0 session, and its
+# clear would wipe every pane at once. Cmd-k sends the tmux prefix plus Ctrl-l, so it
+# clears only the focused pane.
+keybind = super+d=ignore
+keybind = super+shift+d=ignore
+keybind = super+k=text:\x01\x0c
