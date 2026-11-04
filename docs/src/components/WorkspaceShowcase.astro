@@ -29,9 +29,23 @@ const copy = {
 			shells: ['Terminales', 'Shells en el mismo worktree, para git, tests o lo que necesites.'],
 		},
 	},
+	'zh-CN': {
+		alt: '一个 Expo 应用中任务 F0-123 的 f0 工作区：Neovim 显示已修改的文件、打开的 app-tabs.tsx 和文件浏览器，右侧是正在总结工作的 Claude Code，底部一行是 Expo 服务器和三个 shell。',
+		tour: '工作区区域',
+		intro: '每个任务都以这个布局打开。选择一个区域，看看它的作用。',
+		regions: {
+			changes: ['改动', '此任务中修改过的文件及其 git 状态。打开一个即可审查它的 diff。'],
+			file: ['文件', '你正在编辑的文件，或同步滚动的并排 diff，横向也能一起滚动。'],
+			explorer: ['文件浏览器', 'worktree 中的所有文件，用来浏览项目并打开任意文件。'],
+			agent: ['智能体', '你的 AI 智能体，已经在任务中就位。这里是 Claude Code，也可以是 Codex 或你在配置中设置的任何其他 CLI。'],
+			servers: ['服务器', '项目配置中的开发服务器。每个都等待 Enter，除非用 --start 或 autostart 启动。'],
+			shells: ['终端', '位于同一个 worktree 中的 shell，用于 git、测试或其他任何事情。'],
+		},
+	},
 };
 
-const t = copy[Astro.currentLocale === 'es' ? 'es' : 'en'];
+// Keyed by the page's lang, which is what Astro.currentLocale returns.
+const t = copy[Astro.currentLocale as keyof typeof copy] ?? copy.en;
 const regions = Object.entries(t.regions) as [string, [string, string]][];
 ---
 

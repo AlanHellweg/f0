@@ -173,9 +173,94 @@ const copy = {
 			},
 		],
 	},
+	'zh-CN': {
+		filter: '筛选',
+		placeholder: '筛选命令和按键',
+		zen: '专注模式',
+		exitZen: '退出专注模式',
+		empty: '没有匹配项',
+		hint: '按 / 筛选，按 z 进入专注模式，按 Esc 退出。',
+		more: '参考',
+		groups: [
+			{
+				title: '开始任务',
+				more: '/zh-cn/reference/cli/#f0-new',
+				rows: [
+					{ cmd: 'f0 new APP-1', text: '在 feature/APP-1 上新建 slot，并打开工作区' },
+					{ cmd: 'f0 new APP-1 --type fix', text: '改用 fix/APP-1 分支；可以是 branch_prefixes 中的任意一个' },
+					{ cmd: 'f0 new APP-1 --start api,web', text: '立即启动这些服务器' },
+					{ cmd: 'f0 new APP-1 --agent codex', text: '为此任务使用另一个 AI 智能体' },
+				],
+			},
+			{
+				title: '在任务之间切换',
+				more: '/zh-cn/reference/cli/#f0-ls',
+				rows: [
+					{ cmd: 'f0 ls', text: '所有项目的 slot 和会话' },
+					{ cmd: 'f0 switch', text: '跳转到另一个任务' },
+					{ cmd: 'f0 open APP-1', text: '重启后重建任务，并恢复智能体' },
+					{ keys: ['Ctrl-a', 's'], text: '选择会话' },
+					{ keys: ['Ctrl-a', 'd'], text: '分离会话；一切继续运行' },
+				],
+			},
+			{
+				title: '窗格',
+				more: '/zh-cn/reference/keybindings/#tmux',
+				rows: [
+					{ keys: ['Ctrl-h/j/k/l'], text: '在窗格和 Neovim 分屏之间移动' },
+					{ keys: ['Ctrl-a', 'z'], text: '放大当前窗格' },
+					{ keys: ['Ctrl-a', '['], text: '向上滚动；v 选择，y 复制' },
+					{ keys: ['Ctrl-a', 'r'], text: '重新加载 tmux 配置' },
+				],
+			},
+			{
+				title: '编辑器',
+				more: '/zh-cn/reference/keybindings/#文件与搜索',
+				rows: [
+					{ keys: ['Space', 'ff'], text: '查找文件' },
+					{ keys: ['Space', 'fg'], text: '在项目中搜索文本' },
+					{ keys: ['Space', 'e'], text: '显示或隐藏文件浏览器' },
+					{ keys: ['Space', 'gm'], text: '显示或隐藏已修改文件面板' },
+					{ keys: ['Space', 'ui'], text: '恢复三列布局' },
+				],
+			},
+			{
+				title: '审查改动',
+				more: '/zh-cn/reference/keybindings/#git',
+				rows: [
+					{ keys: [']c', '[c'], text: '下一处 / 上一处改动' },
+					{ keys: ['Space', 'gp'], text: '预览改动' },
+					{ keys: ['Space', 'gd'], text: '未提交改动的 diff' },
+					{ keys: ['Space', 'gD'], text: '分支与其基础分支的 diff' },
+					{ keys: ['Space', 'gq'], text: '关闭 diff' },
+				],
+			},
+			{
+				title: '完成',
+				more: '/zh-cn/reference/cli/#f0-done',
+				rows: [
+					{ keys: ['Ctrl-a', 'X'], text: '菜单：关闭并保留 slot，或在询问后归还它' },
+					{ cmd: 'f0 stop', text: '关闭会话并保留 slot，供 f0 open 使用' },
+					{ cmd: 'f0 done', text: '关闭并归还 slot，在会话的任意窗格中输入' },
+					{ cmd: 'f0 done APP-1', text: '在任意终端中' },
+					{ cmd: 'f0 done APP-1 --force', text: '不经询问丢弃未提交的改动' },
+				],
+			},
+			{
+				title: '设置',
+				more: '/zh-cn/reference/cli/#f0-init',
+				rows: [
+					{ cmd: 'f0 init', text: '把你所在的仓库添加为项目' },
+					{ cmd: 'f0 edit', text: '逐个问题修改它的项目文件' },
+					{ cmd: 'f0 doctor', text: '检查工具和项目配置' },
+				],
+			},
+		],
+	},
 } satisfies Record<string, { groups: Group[]; [key: string]: unknown }>;
 
-const t = copy[Astro.currentLocale === 'es' ? 'es' : 'en'];
+// Keyed by the page's lang, which is what Astro.currentLocale returns.
+const t = copy[Astro.currentLocale as keyof typeof copy] ?? copy.en;
 ---
 
 <script is:inline>

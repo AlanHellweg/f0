@@ -139,6 +139,11 @@ starlight-lang-select label {
 	color: var(--sl-color-gray-3);
 }
 
+/* Starlight's fixed 7em cuts 简体中文 short; a native select sized by its widest option fits every locale. */
+starlight-lang-select select {
+	width: auto;
+}
+
 .social-icons::after {
 	border-color: var(--sl-color-hairline-light);
 }

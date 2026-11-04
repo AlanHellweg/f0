@@ -1,0 +1,42 @@
+---
+title: f0
+description: 以 worktree 为核心的终端工作区，专为 AI 辅助开发打造，基于 tmux、Neovim 和 treehouse。
+template: splash
+hero:
+  tagline: 每个任务一条命令。独立的 worktree，独立的编辑器、智能体和服务器，全部在一个 tmux 窗口里。
+  actions:
+    - text: 开始使用
+      link: /zh-cn/getting-started/installation/
+      icon: right-arrow
+    - text: 任务如何运作
+      link: /zh-cn/guides/workflow/
+      variant: minimal
+    - text: 速查表
+      link: /zh-cn/cheatsheet/
+      variant: minimal
+    - text: GitHub
+      link: https://github.com/falcondpr/f0
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import WorkspaceShowcase from '../../../components/WorkspaceShowcase.astro';
+
+<WorkspaceShowcase />
+
+<CardGrid>
+	<Card title="每个任务一个 worktree" icon="seti:git">
+		`f0 new APP-123` 会在新分支上租用一个 treehouse slot，并且已经复制好你的
+		`.env` 文件。
+	</Card>
+	<Card title="处处相同的布局" icon="laptop">
+		编辑器、AI 智能体和最多六个终端，在每个任务、每个目录中都以相同方式排列。
+	</Card>
+	<Card title="审查每一处改动" icon="magnifier">
+		并排 diff 同步滚动，长行也能一起横向滚动。
+	</Card>
+	<Card title="使用你自己的编辑器" icon="puzzle">
+		保留你自己的 Neovim、tmux 和终端配置。只有在你需要时才会安装内置配置。
+	</Card>
+</CardGrid>

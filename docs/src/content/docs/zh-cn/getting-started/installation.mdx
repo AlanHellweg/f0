@@ -1,0 +1,86 @@
+---
+title: 安装
+description: 安装 f0 和 treehouse，并可选安装它的 Neovim、tmux 和 Ghostty 配置。
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## 系统要求
+
+- 安装了 [Homebrew](https://brew.sh) 的 macOS
+- 你的 AI 智能体的 CLI：默认是 [Claude Code](https://code.claude.com/docs)，也可以是你[设置为智能体](/zh-cn/reference/configuration/#ai-智能体)的任何其他 CLI
+
+如果缺少 [treehouse](#treehouse) 和用于构建 CLI 的 Rust，安装脚本会自动安装它们。
+
+## 安装
+
+<Steps>
+
+1. 克隆仓库。
+
+   ```bash
+   git clone https://github.com/falcondpr/f0 ~/dev/f0
+   ```
+
+2. 运行安装脚本。选择要安装的内容：
+
+   <Tabs>
+   <TabItem label="全部安装">
+
+   ```bash
+   ~/dev/f0/install.sh
+   ```
+
+   安装 tmux、treehouse、Neovim、ripgrep、fd 和 Ghostty，并把内置配置链接到 `~/.config`。
+
+   </TabItem>
+   <TabItem label="保留我的配置">
+
+   ```bash
+   ~/dev/f0/install.sh --cli-only
+   ```
+
+   安装 tmux、treehouse 和 `f0` CLI。你的编辑器、tmux 和终端配置保持不变。
+
+   </TabItem>
+   </Tabs>
+
+3. 检查结果。
+
+   ```bash
+   f0 doctor
+   ```
+
+   在你按照[快速上手](/zh-cn/getting-started/quickstart/)添加项目之前，它会报告缺少项目。
+
+</Steps>
+
+## 安装选项
+
+| 参数 | 作用 |
+|---|---|
+| `--no-nvim` | 保留你自己的 Neovim 配置（也不安装 Neovim、ripgrep 和 fd） |
+| `--no-tmux-config` | 保留你自己的 tmux 配置 |
+| `--no-ghostty` | 保留你自己的 Ghostty 配置 |
+| `--cli-only` | 等同于上面三个参数 |
+| `--yes` | 不询问，直接替换已有配置 |
+
+<Aside>
+如果某个配置已经存在且不是 f0 的链接，安装脚本会在替换前询问。默认答案是保留你的配置。任何被替换的内容都会先移动到 `<path>.bak.<timestamp>`。
+</Aside>
+
+安装脚本可以安全地重复运行：已经指向 f0 的链接会保留。
+
+## 你自己的配置
+
+使用 `--no-nvim` 或 `--no-tmux-config` 时，f0 仍然会构建相同的布局，但用 `Ctrl-h/j/k/l` 在窗格之间移动取决于你的配置。参见[快捷键](/zh-cn/reference/keybindings/#使用你自己的配置)。
+
+## treehouse
+
+每个 f0 任务都运行在自己的 treehouse worktree 中，所以 treehouse 是必需的。除非你的 `PATH` 中已经有 `treehouse`，否则安装脚本会运行 `brew install treehouse`。
+
+## 卸载
+
+删除 `~/.config` 中的链接（`nvim`、`tmux`、`ghostty/config`），如果想恢复之前的配置，就还原 `.bak.*` 目录，然后运行 `cargo uninstall f0`。在没有其他程序使用时，用 `brew uninstall treehouse` 卸载 treehouse；如果 Rust 是安装脚本添加的，用 `brew uninstall rust` 卸载它。
