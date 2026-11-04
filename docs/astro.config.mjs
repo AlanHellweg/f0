@@ -46,28 +46,29 @@ export default defineConfig({
 			locales: {
 				root: { label: 'English', lang: 'en' },
 				es: { label: 'Español', lang: 'es' },
+				'zh-cn': { label: '简体中文', lang: 'zh-CN' },
 			},
 			sidebar: [
 				// Outside the groups and styled as a shortcut in custom.css, so visitors notice it.
 				{ slug: 'cheatsheet', attrs: { class: 'sidebar-cheatsheet' } },
 				{
 					label: 'Getting started',
-					translations: { es: 'Primeros pasos' },
+					translations: { es: 'Primeros pasos', 'zh-CN': '入门' },
 					items: [{ autogenerate: { directory: 'getting-started' } }],
 				},
 				{
 					label: 'Guides',
-					translations: { es: 'Guías' },
+					translations: { es: 'Guías', 'zh-CN': '指南' },
 					items: [{ autogenerate: { directory: 'guides' } }],
 				},
 				{
 					label: 'Reference',
-					translations: { es: 'Referencia' },
+					translations: { es: 'Referencia', 'zh-CN': '参考' },
 					items: [{ autogenerate: { directory: 'reference' } }],
 				},
 				{
 					label: 'Concepts',
-					translations: { es: 'Conceptos' },
+					translations: { es: 'Conceptos', 'zh-CN': '概念' },
 					items: [{ autogenerate: { directory: 'concepts' } }],
 				},
 			],

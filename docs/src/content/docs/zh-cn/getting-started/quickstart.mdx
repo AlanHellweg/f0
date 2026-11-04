@@ -1,0 +1,66 @@
+---
+title: 快速上手
+description: 几分钟内启动一个拥有独立 worktree 和工作区的任务。
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+每个任务都有自己的 worktree，所以每个仓库需要两样东西：一个项目文件和一个 `.worktreeinclude`。
+
+<Steps>
+
+1. 在仓库内创建项目文件：
+
+   ```bash
+   cd ~/dev/my-app
+   f0 init
+   ```
+
+   它会询问项目名称、基础分支、env 文件和开发服务器，然后写入 `~/.config/f0/projects/my-app.toml`。文件名就是项目名称。结果如下所示。之后可以用 `f0 edit` 修改，也可以手动编辑：
+
+   ```toml
+   repo = "~/dev/my-app"
+   base = "develop"
+
+   [[servers]]
+   name = "api"
+   cmd = "pnpm dev:api"
+
+   [[servers]]
+   name = "web"
+   cmd = "pnpm dev:web"
+   ```
+
+2. 在仓库根目录的 `.worktreeinclude` 中列出每个 worktree 都需要的被忽略文件（通常是 `.env`）：
+
+   ```
+   apps/api/.env
+   apps/web/.env
+   ```
+
+   没有这个文件，f0 不会启动任务。如果项目不需要任何被忽略的文件，就让它保持为空。当仓库没有 `.worktreeinclude` 时，`f0 init` 会列出它找到的 `.env` 文件，并把列表保存在你的配置目录中，所以你无法提交的仓库也能使用。
+
+3. 在仓库内的任意位置启动任务：
+
+   ```bash
+   f0 doctor
+   f0 new APP-123
+   ```
+
+   f0 会在一个新的 slot 中从 `develop` 创建 `feature/APP-123`，并打开名为 `my-app/APP-123` 的 tmux 会话，编辑器和智能体已经在运行。每个服务器窗格的命令都已输入好并等待执行：在需要的窗格中按 Enter，或者用 `f0 new APP-123 --start api` 让它们随任务一起启动。修复 bug 或做杂项工作时，`f0 new APP-123 --type fix` 会改为创建 `fix/APP-123`。
+
+4. 开始工作。随时可以用 `Ctrl-a d` 分离会话，一切都会继续运行。用 `f0 switch` 或 `f0 open APP-123` 回来。
+
+5. 任务合并后，在它的会话中按 `Ctrl-a X`，或者在任意终端中运行：
+
+   ```bash
+   f0 done APP-123  # 或者用 `f0 ls` 中的 slot id，比如 my-app/4
+   ```
+
+</Steps>
+
+<Aside type="tip">
+编辑项目文件后运行 `f0 doctor`。它会校验每个键，并检查编辑器和智能体的命令是否存在。
+</Aside>
