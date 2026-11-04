@@ -1,11 +1,11 @@
 ---
 title: Atajos
-description: Atajos de tmux y Neovim en las configuraciones incluidas.
+description: Atajos de tmux, Ghostty y Neovim en las configuraciones incluidas.
 sidebar:
   order: 3
 ---
 
-Vienen de las configuraciones incluidas en `config/tmux` y `config/nvim`. `Space` es la tecla líder de Neovim.
+Vienen de las configuraciones incluidas en `config/tmux`, `config/ghostty` y `config/nvim`. `Space` es la tecla líder de Neovim.
 
 ## tmux
 
@@ -26,6 +26,15 @@ El prefijo es `Ctrl-a`.
 | `Ctrl-a r` | Recarga la configuración de tmux |
 
 El mouse está activado: clic para enfocar, arrastra los bordes para redimensionar, rueda para ver el historial.
+
+Los paneles no se cierran cuando su shell termina, por ejemplo con `Ctrl-d` en un prompt vacío: f0 abre un shell nuevo en el mismo panel, con el comando del panel escrito y esperando Enter (`nvim .`, el agente, el servidor). Para cerrar un panel a propósito, usa `Ctrl-a x`.
+
+## Ghostty
+
+| Teclas | Acción |
+|---|---|
+| `Cmd-k` | Limpia el panel enfocado, igual que `Ctrl-a Ctrl-l` |
+| `Cmd-d` / `Cmd-Shift-d` | No hacen nada. Los paneles son de tmux, y una división de Ghostty quedaría fuera de la sesión de f0. El menú de Ghostty todavía puede dividir la ventana |
 
 ## Neovim
 

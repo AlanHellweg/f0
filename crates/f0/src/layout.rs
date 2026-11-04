@@ -19,6 +19,10 @@ pub struct Pane {
     pub command: Option<String>,
     /// Press Enter after typing `command`; otherwise it waits in the prompt.
     pub run: bool,
+    /// When the shell exits, for example with Ctrl-d at the prompt, a new one starts in
+    /// the pane with this typed in its prompt, waiting for Enter, so the layout never
+    /// loses the pane.
+    pub restart: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,6 +75,7 @@ pub fn build(project: &Project, worktree: &Path, start: &[String], resume: bool)
             cwd: worktree.to_owned(),
             command: Some(project.editor.cmd.clone()),
             run: true,
+            restart: Some(project.editor.cmd.clone()),
         },
         terminal_pane(project, worktree, 0, start),
         Pane {
@@ -78,6 +83,8 @@ pub fn build(project: &Project, worktree: &Path, start: &[String], resume: bool)
             cwd: worktree.to_owned(),
             command: Some(agent),
             run: true,
+            // Leaving the agent and its shell is a request for a fresh one, not a resume.
+            restart: Some(project.agent.cmd.clone()),
         },
     ];
 
@@ -138,12 +145,14 @@ fn terminal_pane(project: &Project, worktree: &Path, index: usize, start: &[Stri
                 .map_or_else(|| worktree.to_owned(), |cwd| worktree.join(cwd)),
             command: Some(server.cmd.clone()),
             run: server.autostart || start.contains(&server.name),
+            restart: Some(server.cmd.clone()),
         },
         None => Pane {
             title: "shell".to_owned(),
             cwd: worktree.to_owned(),
             command: None,
             run: false,
+            restart: None,
         },
     }
 }
@@ -259,6 +268,37 @@ mod tests {
         };
         let pane = build(&codex, Path::new("/w"), &[], true).panes[AGENT].clone();
         assert_eq!(pane.command.as_deref(), Some("codex"));
+    }
+
+    #[test]
+    fn every_pane_survives_its_shell_with_its_command_ready() {
+        let project = project(
+            r#"
+            repo = "/src/hubi"
+            [[servers]]
+            name = "nexus"
+            cmd = "a"
+            [[servers]]
+            name = "mobile"
+            cmd = "b"
+            "#,
+        );
+        let restart: Vec<_> = build(&project, Path::new("/w"), &[], true)
+            .panes
+            .into_iter()
+            .map(|p| p.restart)
+            .collect();
+        assert_eq!(
+            restart,
+            [
+                Some("nvim .".to_owned()),
+                Some("a".to_owned()),
+                Some("claude".to_owned()),
+                Some("b".to_owned()),
+                None,
+                None
+            ]
+        );
     }
 
     #[test]

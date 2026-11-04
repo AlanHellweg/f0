@@ -327,6 +327,16 @@ fn quote(value: &str) -> String {
     out
 }
 
+/// Hook that restarts the shell of the pane it runs in and types `command` in the new
+/// prompt. Hook arguments get no format expansion, so the command goes in literally;
+/// single quotes also keep tmux from expanding a leading `~`.
+fn restart_hook(command: Option<&str>) -> String {
+    match command {
+        Some(command) => format!("respawn-pane ; send-keys -l {}", shell_quote(command)),
+        None => "respawn-pane".to_owned(),
+    }
+}
+
 pub fn create_session(name: &str, worktree: &Path, layout: &Layout) -> Result<(), F0Error> {
     let root = layout.panes[0].cwd.to_string_lossy();
     let env: Vec<String> = layout.env.iter().map(|(k, v)| format!("{k}={v}")).collect();
@@ -390,6 +400,18 @@ pub fn create_session(name: &str, worktree: &Path, layout: &Layout) -> Result<()
         // f0 sets is what tells the panes apart. tmux before 3.4 lacks the option.
         let _ = tmux(&["set-option", "-p", "-t", id, "allow-set-title", "off"]);
         tmux(&["select-pane", "-t", id, "-T", &pane.title])?;
+        // Ctrl-d at an empty prompt would otherwise close the pane and collapse the
+        // layout; `kill-pane` still closes it on purpose. `pane-died` only fires on panes
+        // that remain on exit.
+        tmux(&["set-option", "-p", "-t", id, "remain-on-exit", "on"])?;
+        tmux(&[
+            "set-hook",
+            "-p",
+            "-t",
+            id,
+            "pane-died",
+            &restart_hook(pane.restart.as_deref()),
+        ])?;
         if let Some(command) = &pane.command {
             tmux(&["send-keys", "-t", id, "-l", command])?;
             if pane.run {
@@ -491,6 +513,15 @@ mod tests {
     fn quote_keeps_values_literal_for_tmux() {
         assert_eq!(quote("/a b/f0"), r#""/a b/f0""#);
         assert_eq!(quote(r#"it's "x" $HOME \n"#), r#""it's \"x\" \$HOME \\n""#);
+    }
+
+    #[test]
+    fn restart_hook_types_the_command_literally() {
+        assert_eq!(restart_hook(None), "respawn-pane");
+        assert_eq!(
+            restart_hook(Some(r#"~/x "@a/b" it's $HOME #{pane_id}"#)),
+            r#"respawn-pane ; send-keys -l '~/x "@a/b" it'\''s $HOME #{pane_id}'"#
+        );
     }
 
     #[test]
