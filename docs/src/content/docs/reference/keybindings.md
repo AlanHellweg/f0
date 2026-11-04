@@ -1,11 +1,11 @@
 ---
 title: Key bindings
-description: tmux and Neovim shortcuts in the bundled configs.
+description: tmux, Ghostty and Neovim shortcuts in the bundled configs.
 sidebar:
   order: 3
 ---
 
-These come from the bundled configs in `config/tmux` and `config/nvim`. `Space` is the Neovim leader key.
+These come from the bundled configs in `config/tmux`, `config/ghostty` and `config/nvim`. `Space` is the Neovim leader key.
 
 ## tmux
 
@@ -26,6 +26,15 @@ The prefix is `Ctrl-a`.
 | `Ctrl-a r` | Reload the tmux config |
 
 The mouse is enabled: click to focus, drag borders to resize, scroll to see history.
+
+Panes never close when their shell exits, for example with `Ctrl-d` at an empty prompt: f0 starts a new shell in the same pane, with the pane's command typed and waiting for Enter (`nvim .`, the agent, the server). To close a pane on purpose, use `Ctrl-a x`.
+
+## Ghostty
+
+| Keys | Action |
+|---|---|
+| `Cmd-k` | Clear the focused pane, same as `Ctrl-a Ctrl-l` |
+| `Cmd-d` / `Cmd-Shift-d` | Do nothing. The panes belong to tmux, and a Ghostty split would sit outside the f0 session. Ghostty's menu can still split the window |
 
 ## Neovim
 

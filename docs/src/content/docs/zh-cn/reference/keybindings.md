@@ -1,11 +1,11 @@
 ---
 title: 快捷键
-description: 内置配置中的 tmux 和 Neovim 快捷键。
+description: 内置配置中的 tmux、Ghostty 和 Neovim 快捷键。
 sidebar:
   order: 3
 ---
 
-这些快捷键来自 `config/tmux` 和 `config/nvim` 中的内置配置。`Space` 是 Neovim 的 leader 键。
+这些快捷键来自 `config/tmux`、`config/ghostty` 和 `config/nvim` 中的内置配置。`Space` 是 Neovim 的 leader 键。
 
 ## tmux
 
@@ -26,6 +26,15 @@ sidebar:
 | `Ctrl-a r` | 重新加载 tmux 配置 |
 
 鼠标已启用：点击获得焦点，拖动边框调整大小，滚动查看历史。
+
+窗格的 shell 退出时（例如在空提示符下按 `Ctrl-d`），窗格不会关闭：f0 会在同一个窗格中启动一个新的 shell，并在提示符中输入该窗格的命令（`nvim .`、agent、服务器），等待按 Enter。要有意关闭某个窗格，请使用 `Ctrl-a x`。
+
+## Ghostty
+
+| 按键 | 操作 |
+|---|---|
+| `Cmd-k` | 清空当前窗格，与 `Ctrl-a Ctrl-l` 相同 |
+| `Cmd-d` / `Cmd-Shift-d` | 不做任何事。窗格由 tmux 管理，Ghostty 的分屏会处在 f0 会话之外。仍然可以通过 Ghostty 的菜单分割窗口 |
 
 ## Neovim
 
