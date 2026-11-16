@@ -1,11 +1,31 @@
 ---
 title: 快捷键
-description: 内置配置中的 tmux、Ghostty 和 Neovim 快捷键。
+description: f0 启动器以及内置 tmux、Ghostty 和 Neovim 配置的快捷键。
 sidebar:
   order: 3
 ---
 
-这些快捷键来自 `config/tmux`、`config/ghostty` 和 `config/nvim` 中的内置配置。`Space` 是 Neovim 的 leader 键。
+启动器的按键是 f0 的一部分。其他快捷键来自 `config/tmux`、`config/ghostty` 和 `config/nvim` 中的内置配置。`Space` 是 Neovim 的 leader 键。
+
+## 启动器
+
+用于 f0.app 的主屏幕 [`f0 launch`](/zh-cn/reference/cli/#f0-launch)。
+
+| 按键 | 项目 | 任务 |
+|---|---|---|
+| 方向键或 `h/j/k/l` | 在卡片之间移动 | 在卡片之间移动 |
+| `Enter` | 查看它的任务 | 打开任务并连接到它的会话 |
+| `a` | 从你的仓库中添加项目 | |
+| `n` | | 开始一个任务，会询问 ticket |
+| `c` | | 关闭会话并保留 slot（`f0 stop`） |
+| `x` | | 确认后结束任务并归还 slot（`f0 done`） |
+| `e` | 编辑项目（`f0 edit`） | 编辑项目（`f0 edit`） |
+| `d` | 检查安装（`f0 doctor`） | |
+| `/` | 过滤卡片 | 过滤卡片 |
+| `Esc` | 清除过滤 | 清除过滤，然后返回项目列表 |
+| `q` | 退出并关闭 f0.app 窗口 | 退出并关闭 f0.app 窗口 |
+
+在 `a` 显示的仓库列表中，`Enter` 添加仓库，`p` 输入一个目录，`Esc` 返回。
 
 ## tmux
 
@@ -27,9 +47,13 @@ sidebar:
 
 鼠标已启用：点击获得焦点，拖动边框调整大小，滚动查看历史。
 
+`Ctrl-Shift-x` 和 `Ctrl-Enter` 等按键可以到达 Neovim 和智能体：配置为 Ghostty 和 xterm 终端开启了 tmux 的扩展按键（CSI u 格式）。
+
 窗格的 shell 退出时（例如在空提示符下按 `Ctrl-d`），窗格不会关闭：f0 会在同一个窗格中启动一个新的 shell，并在提示符中输入该窗格的命令（`nvim .`、agent、服务器），等待按 Enter。要有意关闭某个窗格，请使用 `Ctrl-a x`。
 
 ## Ghostty
+
+这些快捷键在 f0.app 中由它自己的配置提供；在你的 Ghostty 中，则在链接了内置的 `config/ghostty/config` 时生效。
 
 | 按键 | 操作 |
 |---|---|

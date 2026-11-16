@@ -1,11 +1,31 @@
 ---
 title: Atajos
-description: Atajos de tmux, Ghostty y Neovim en las configuraciones incluidas.
+description: Atajos del launcher de f0 y de las configuraciones incluidas de tmux, Ghostty y Neovim.
 sidebar:
   order: 3
 ---
 
-Vienen de las configuraciones incluidas en `config/tmux`, `config/ghostty` y `config/nvim`. `Space` es la tecla líder de Neovim.
+Las teclas del launcher son parte de f0. Las demás vienen de las configuraciones incluidas en `config/tmux`, `config/ghostty` y `config/nvim`. `Space` es la tecla líder de Neovim.
+
+## Launcher
+
+En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
+
+| Teclas | Proyectos | Tareas |
+|---|---|---|
+| Flechas o `h/j/k/l` | Moverse entre tarjetas | Moverse entre tarjetas |
+| `Enter` | Ver sus tareas | Abrir la tarea y conectarse a su sesión |
+| `a` | Agregar un proyecto desde tus repositorios | |
+| `n` | | Empezar una tarea, pidiendo su ticket |
+| `c` | | Cerrar la sesión y conservar el slot (`f0 stop`) |
+| `x` | | Terminar la tarea y devolver su slot (`f0 done`), después de preguntar |
+| `e` | Editar el proyecto (`f0 edit`) | Editar el proyecto (`f0 edit`) |
+| `d` | Revisar la instalación (`f0 doctor`) | |
+| `/` | Filtrar las tarjetas | Filtrar las tarjetas |
+| `Esc` | Borrar el filtro | Borrar el filtro, después volver a los proyectos |
+| `q` | Salir, cerrando la ventana de f0.app | Salir, cerrando la ventana de f0.app |
+
+En la lista de repositorios que muestra `a`, `Enter` agrega uno, `p` toma una carpeta que escribes y `Esc` vuelve.
 
 ## tmux
 
@@ -27,9 +47,13 @@ El prefijo es `Ctrl-a`.
 
 El mouse está activado: clic para enfocar, arrastra los bordes para redimensionar, rueda para ver el historial.
 
+Teclas como `Ctrl-Shift-x` y `Ctrl-Enter` llegan a Neovim y al agente: la configuración activa las teclas extendidas de tmux, en el formato CSI u, para las terminales Ghostty y xterm.
+
 Los paneles no se cierran cuando su shell termina, por ejemplo con `Ctrl-d` en un prompt vacío: f0 abre un shell nuevo en el mismo panel, con el comando del panel escrito y esperando Enter (`nvim .`, el agente, el servidor). Para cerrar un panel a propósito, usa `Ctrl-a x`.
 
 ## Ghostty
+
+Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está enlazado el `config/ghostty/config` incluido.
 
 | Teclas | Acción |
 |---|---|

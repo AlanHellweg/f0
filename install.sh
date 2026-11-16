@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Installs f0: tmux, treehouse, Rust when cargo is missing, and the CLI, plus,
+# Installs f0: tmux, treehouse, Rust when cargo is missing, the CLI and f0.app, plus,
 # optionally, the bundled Neovim, tmux and Ghostty configs.
-# Safe to run again: existing f0 links are kept, and any other config is only
-# replaced after asking (or with --yes), with a backup first.
+# Safe to run again: existing f0 links are kept, any other config is only replaced
+# after asking (or with --yes), with a backup first, and f0.app is rebuilt from the
+# installed Ghostty.
 set -euo pipefail
 
 usage() {
@@ -11,8 +12,9 @@ Usage: install.sh [options]
 
   --no-nvim          keep your own Neovim config
   --no-tmux-config   keep your own tmux config
-  --no-ghostty       keep your own Ghostty config
-  --cli-only         same as the three above: only tmux, treehouse, Rust and the f0 CLI
+  --no-ghostty       keep your own Ghostty config (f0.app still installs Ghostty)
+  --no-app           skip /Applications/f0.app and its Ghostty
+  --cli-only         same as the four above: only tmux, treehouse, Rust and the f0 CLI
   --yes              replace existing configs without asking (they are backed up)
   -h, --help         show this help
 EOF
@@ -24,10 +26,14 @@ CARGO_BIN="${CARGO_HOME:-$HOME/.cargo}/bin"
 USER_PATH="$PATH"
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 STAMP="$(date +%Y%m%d%H%M%S)"
+GHOSTTY_APP=/Applications/Ghostty.app
+APP=/Applications/f0.app
+APP_ID=com.falcondpr.f0
 
 with_nvim=1
 with_tmux=1
 with_ghostty=1
+with_app=1
 assume_yes=0
 
 for arg in "$@"; do
@@ -35,7 +41,8 @@ for arg in "$@"; do
     --no-nvim) with_nvim=0 ;;
     --no-tmux-config) with_tmux=0 ;;
     --no-ghostty) with_ghostty=0 ;;
-    --cli-only) with_nvim=0 with_tmux=0 with_ghostty=0 ;;
+    --no-app) with_app=0 ;;
+    --cli-only) with_nvim=0 with_tmux=0 with_ghostty=0 with_app=0 ;;
     --yes) assume_yes=1 ;;
     -h | --help) usage; exit 0 ;;
     *) echo "unknown option: $arg" >&2; usage >&2; exit 1 ;;
@@ -89,6 +96,75 @@ ensure_cargo() {
   fi
 }
 
+# f0.app is a copy of Ghostty.app renamed to f0, with its own bundle id, icon and
+# executable (crates/f0-app), signed ad hoc. Its executable makes Ghostty read only
+# ~/.config/f0/ghostty.conf. Rebuilt from scratch every run, so a newer Ghostty or f0
+# reaches it.
+build_app() {
+  if [ -d "$APP" ]; then
+    local id
+    id="$(defaults read "$APP/Contents/Info" CFBundleIdentifier 2>/dev/null || true)"
+    if [ "$id" != "$APP_ID" ]; then
+      echo "$APP exists and is not f0's app (bundle id: ${id:-none}); move it away and run install.sh again" >&2
+      exit 1
+    fi
+    if pgrep -f "$APP/Contents/MacOS/" >/dev/null; then
+      info "warning: f0.app is open; quit it and open it again to use the new build"
+    fi
+    rm -rf "$APP"
+  fi
+  info "creating $APP from Ghostty $(defaults read "$GHOSTTY_APP/Contents/Info" CFBundleShortVersionString)"
+  ditto "$GHOSTTY_APP" "$APP"
+  local plist="$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy \
+    -c "Set :CFBundleIdentifier $APP_ID" \
+    -c "Set :CFBundleName f0" \
+    -c "Set :CFBundleExecutable f0" \
+    -c "Set :CFBundleIconFile f0" \
+    "$plist"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName f0" "$plist" 2>/dev/null ||
+    /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string f0" "$plist"
+  # Without it Finder shows the Ghostty icon from the asset catalog instead of f0.icns.
+  /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$plist" 2>/dev/null || true
+  cp "$ROOT/target/release/f0-app" "$APP/Contents/MacOS/f0"
+  cp "$ROOT/config/app/f0.icns" "$APP/Contents/Resources/f0.icns"
+  # A Ghostty downloaded with a browser is quarantined, and Gatekeeper would refuse the
+  # copy once it is signed ad hoc.
+  xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
+  codesign --force --deep --sign - "$APP" 2>/dev/null
+  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" || true
+}
+
+# Fills the paths into config/ghostty/f0.conf. The file is generated, so a different
+# one is backed up and replaced without asking.
+write_app_config() {
+  local dst="$CONFIG/f0/ghostty.conf" tmp
+  tmp="$(mktemp)"
+  sed -e "s|@F0_BIN@|$(sed_escape "$CARGO_BIN/f0")|g" \
+      -e "s|@F0_ICON@|$(sed_escape "$APP/Contents/Resources/f0.icns")|g" \
+      "$ROOT/config/ghostty/f0.conf" >"$tmp"
+  if [ -f "$dst" ] && cmp -s "$tmp" "$dst"; then
+    rm "$tmp"
+    info "ok      $dst"
+    return
+  fi
+  if [ -f "$dst" ]; then
+    mv "$dst" "$dst.bak.$STAMP"
+    info "backup  $dst -> $dst.bak.$STAMP"
+  fi
+  mv "$tmp" "$dst"
+  info "write   $dst"
+}
+
+sed_escape() {
+  printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
+}
+
+if [ "$with_app" = 1 ] && [ "$(uname -s)" != Darwin ]; then
+  info "f0.app is macOS only; skipping it"
+  with_app=0
+fi
+
 if ! command -v brew >/dev/null; then
   echo "Homebrew is required: https://brew.sh" >&2
   exit 1
@@ -104,7 +180,8 @@ if [ "$with_nvim" = 1 ]; then
     brew_formula "$formula"
   done
 fi
-if [ "$with_ghostty" = 1 ] && [ ! -d /Applications/Ghostty.app ]; then
+# f0.app is built from Ghostty, so it needs Ghostty even with --no-ghostty.
+if { [ "$with_ghostty" = 1 ] || [ "$with_app" = 1 ]; } && [ ! -d "$GHOSTTY_APP" ]; then
   brew install --cask ghostty
 fi
 
@@ -116,6 +193,12 @@ mkdir -p "$CONFIG/f0/projects"
 
 info "building f0"
 cargo install --path "$ROOT/crates/f0" --locked --quiet
+
+if [ "$with_app" = 1 ]; then
+  cargo build --release --locked --quiet --manifest-path "$ROOT/Cargo.toml" -p f0-app
+  build_app
+  write_app_config
+fi
 
 case ":$USER_PATH:" in
   *":$CARGO_BIN:"*) ;;

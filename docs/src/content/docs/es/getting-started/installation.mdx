@@ -1,6 +1,6 @@
 ---
 title: Instalación
-description: Instala f0 con treehouse y, si quieres, sus configuraciones de Neovim, tmux y Ghostty.
+description: Instala f0 con treehouse y f0.app, su propia terminal, y, si quieres, sus configuraciones de Neovim, tmux y Ghostty.
 sidebar:
   order: 1
 ---
@@ -33,7 +33,7 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
    ~/dev/f0/install.sh
    ```
 
-   Instala tmux, treehouse, Neovim, ripgrep, fd y Ghostty, y enlaza las configuraciones incluidas en `~/.config`.
+   Instala tmux, treehouse, Neovim, ripgrep, fd y Ghostty, enlaza las configuraciones incluidas en `~/.config` y crea [f0.app](#f0app).
 
    </TabItem>
    <TabItem label="Conservar mis configuraciones">
@@ -42,7 +42,7 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
    ~/dev/f0/install.sh --cli-only
    ```
 
-   Instala tmux, treehouse y la CLI `f0`. Tus configuraciones de editor, tmux y terminal no se tocan.
+   Instala tmux, treehouse y la CLI `f0`, sin f0.app. Tus configuraciones de editor, tmux y terminal no se tocan.
 
    </TabItem>
    </Tabs>
@@ -55,6 +55,8 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
 
    Marca que falta un proyecto hasta que agregues uno en el [Inicio rápido](/es/getting-started/quickstart/).
 
+4. Abre **f0** desde Spotlight, Launchpad o `/Applications`. Su launcher agrega tu primer proyecto con `a`.
+
 </Steps>
 
 ## Opciones del instalador
@@ -63,8 +65,9 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
 |---|---|
 | `--no-nvim` | Conserva tu configuración de Neovim (tampoco instala Neovim, ripgrep ni fd) |
 | `--no-tmux-config` | Conserva tu configuración de tmux |
-| `--no-ghostty` | Conserva tu configuración de Ghostty |
-| `--cli-only` | Equivale a las tres opciones anteriores |
+| `--no-ghostty` | Conserva tu configuración de Ghostty. f0.app igual instala Ghostty, y nunca lee esa configuración |
+| `--no-app` | No crea f0.app |
+| `--cli-only` | Equivale a las cuatro opciones anteriores |
 | `--yes` | Reemplaza las configuraciones existentes sin preguntar |
 
 <Aside>
@@ -73,7 +76,24 @@ antes de reemplazarla. La respuesta por defecto conserva la tuya. Lo que se
 reemplaza se mueve antes a `<ruta>.bak.<fecha>`.
 </Aside>
 
-Puedes volver a ejecutar el instalador sin riesgo: los enlaces que ya apuntan a f0 se mantienen.
+Puedes volver a ejecutar el instalador sin riesgo: los enlaces que ya apuntan a f0 se mantienen, y f0.app se vuelve a crear.
+
+## f0.app
+
+f0.app es la terminal propia de f0, así sus atajos funcionan igual uses la terminal que uses para todo lo demás. Es una copia de Ghostty llamada f0, con su propio ícono y su propia configuración, `~/.config/f0/ghostty.conf`. Cada ventana abre el [launcher](/es/reference/cli/#f0-launch): eliges un proyecto, después una tarea, y al salir de su sesión vuelve la lista de proyectos. f0.app no tiene una shell suelta: `q` cierra la ventana.
+
+- Es independiente de Ghostty: tu Ghostty, abierto o cerrado, y su configuración no la afectan, y ella no los cambia.
+- El instalador copia `/Applications/Ghostty.app`, instalándolo con Homebrew si falta, renombra la copia, le da el bundle id `com.falcondpr.f0` y la firma ad hoc.
+- La copia se queda en la versión de Ghostty de la que se hizo. Vuelve a ejecutar `install.sh` después de actualizar Ghostty o f0 para recrearla.
+- Las ventanas arrancan en tu shell de login, así el `PATH` tiene Homebrew y Cargo aunque abras la app desde Finder.
+
+<Aside>
+`install.sh` reescribe `~/.config/f0/ghostty.conf` cada vez, y mueve uno modificado a
+`ghostty.conf.bak.<fecha>`. Para cambiar el tema, la fuente o los atajos de f0.app,
+edita `config/ghostty/f0.conf` en el repositorio y vuelve a ejecutar el instalador.
+</Aside>
+
+La primera vez que el launcher busca repositorios en tu Escritorio o en Documentos, macOS pregunta si f0 puede leerlos.
 
 ## Tus propias configuraciones
 
@@ -85,4 +105,4 @@ Cada tarea de f0 corre en su propio worktree de treehouse, así que treehouse es
 
 ## Desinstalar
 
-Borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse`, y Rust con `brew uninstall rust` si lo agregó el instalador, cuando nada más los use.
+Borra `/Applications/f0.app` y `~/.config/f0/ghostty.conf`, borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse`, y Rust con `brew uninstall rust` si lo agregó el instalador, cuando nada más los use.

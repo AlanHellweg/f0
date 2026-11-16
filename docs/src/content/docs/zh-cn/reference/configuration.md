@@ -12,6 +12,7 @@ f0 只读取个人配置，所以共享仓库无需任何改动。你至少需�
 ```
 ~/.config/f0/
 ├── config.toml          全局默认值
+├── ghostty.conf         f0.app 的 Ghostty 配置，由 install.sh 写入
 └── projects/
     └── my-app.toml      每个项目一个文件
 ```
@@ -59,6 +60,19 @@ done = "X"
 | `keys.done` | `"X"` | 在按下它的会话中打开一个关闭任务的菜单：保留 slot（如 `f0 stop`），或归还它（如 `f0 done`）。可以是任何 tmux 按键名（`"Q"`、`"M-x"`）；`false` 表示关闭 |
 
 每个 f0 会话的状态栏都会显示这个按键，比如 `C-a X close task`。f0 从不替换你的 tmux 配置已经绑定到其他功能的按键：`f0 keys` 和 `f0 doctor` 会提示你换一个。
+
+## 启动器
+
+[`f0 launch`](/zh-cn/reference/cli/#f0-launch) 中的 `a` 会在 `~/Desktop`、`~/Documents`、`~/Developer`、`~/code`、`~/dev`、`~/Projects` 和 `~/src` 中查找仓库，不存在的目录会跳过。在 `config.toml` 中添加更多目录，它们也会被搜索。
+
+```toml
+[launch]
+folders = ["~/work", "/Volumes/Data/repos"]
+```
+
+| 键 | 默认值 | 含义 |
+|---|---|---|
+| `launch.folders` | `[]` | 除默认目录外，额外查找仓库的目录 |
 
 ## AI 智能体
 

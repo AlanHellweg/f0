@@ -1,11 +1,31 @@
 ---
 title: Key bindings
-description: tmux, Ghostty and Neovim shortcuts in the bundled configs.
+description: Shortcuts of the f0 launcher and of the bundled tmux, Ghostty and Neovim configs.
 sidebar:
   order: 3
 ---
 
-These come from the bundled configs in `config/tmux`, `config/ghostty` and `config/nvim`. `Space` is the Neovim leader key.
+The launcher keys are part of f0. The others come from the bundled configs in `config/tmux`, `config/ghostty` and `config/nvim`. `Space` is the Neovim leader key.
+
+## Launcher
+
+In [`f0 launch`](/reference/cli/#f0-launch), the home screen of f0.app.
+
+| Keys | Projects | Tasks |
+|---|---|---|
+| Arrows or `h/j/k/l` | Move between cards | Move between cards |
+| `Enter` | Show its tasks | Open the task and attach to its session |
+| `a` | Add a project from your repositories | |
+| `n` | | Start a task, asking for its ticket |
+| `c` | | Close the session and keep the slot (`f0 stop`) |
+| `x` | | Finish the task and return its slot (`f0 done`), after asking |
+| `e` | Edit the project (`f0 edit`) | Edit the project (`f0 edit`) |
+| `d` | Check the setup (`f0 doctor`) | |
+| `/` | Filter the cards | Filter the cards |
+| `Esc` | Clear the filter | Clear the filter, then back to the projects |
+| `q` | Quit, closing the f0.app window | Quit, closing the f0.app window |
+
+In the list of repositories that `a` shows, `Enter` adds one, `p` takes a folder you type, and `Esc` goes back.
 
 ## tmux
 
@@ -27,9 +47,13 @@ The prefix is `Ctrl-a`.
 
 The mouse is enabled: click to focus, drag borders to resize, scroll to see history.
 
+Keys like `Ctrl-Shift-x` and `Ctrl-Enter` reach Neovim and the agent: the config turns on tmux's extended keys, in the CSI u format, for Ghostty and xterm terminals.
+
 Panes never close when their shell exits, for example with `Ctrl-d` at an empty prompt: f0 starts a new shell in the same pane, with the pane's command typed and waiting for Enter (`nvim .`, the agent, the server). To close a pane on purpose, use `Ctrl-a x`.
 
 ## Ghostty
+
+These apply in f0.app, from its own config, and in your Ghostty when the bundled `config/ghostty/config` is linked.
 
 | Keys | Action |
 |---|---|

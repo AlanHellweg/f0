@@ -11,16 +11,34 @@ f0 <comando> [opciones]
 
 Ejecuta `f0 <comando> --help` para ver la misma información en la terminal (en inglés).
 
-## f0 init
+## f0 launch
 
-Crea el archivo de proyecto del repositorio en el que estás, haciéndote preguntas.
+Muestra la pantalla de inicio de f0: tus proyectos, y después las tareas del que elijas. [f0.app](/es/getting-started/installation/#f0app) lo abre en cada ventana, y también funciona en cualquier otra terminal.
 
 ```bash
-f0 init [--name <nombre>] [--template]
+f0 launch
+```
+
+Los proyectos y las tareas se muestran como tarjetas, y la seleccionada lleva el borde del color de acento. La tarjeta de un proyecto cuenta sus tareas; la de una tarea muestra su rama y si está corriendo (`●`, con cuándo la usaste por última vez) o parada (`○`: el slot está alquilado, sin sesión). Mira [Atajos](/es/reference/keybindings/#launcher) para todas las teclas.
+
+- **Enter sobre una tarea** la abre como `f0 open` y se conecta a su sesión. Al salir de la sesión, desconectándote (`Ctrl-a d`), con `f0 stop` o con `f0 done`, vuelve la lista de proyectos, con ese proyecto seleccionado.
+- **`n`** pide un ticket y empieza la tarea como `f0 new`.
+- **`a`**, en los proyectos, busca repositorios de git que todavía no son proyectos, hasta tres carpetas de profundidad en las [carpetas de búsqueda](/es/reference/configuration/#launcher), salteando `node_modules`, `target`, las carpetas ocultas y los slots de treehouse. Enter sobre uno le hace las preguntas de `f0 init`, y `p` toma la carpeta de uno que la búsqueda no encontró.
+- **`q`** sale del launcher, y eso cierra la ventana de f0.app. El launcher no tiene forma de salir a una shell suelta.
+
+Si se ejecuta dentro de tmux, se niega y sugiere `f0 switch`: un launcher en un panel de tmux anidaría sesiones.
+
+## f0 init
+
+Crea el archivo de proyecto de un repositorio, haciéndote preguntas.
+
+```bash
+f0 init [ruta] [--name <nombre>] [--template]
 ```
 
 | Argumento | Significado |
 |---|---|
+| `[ruta]` | Una carpeta dentro del repositorio. Por defecto, el directorio actual |
 | `--name` | Respuesta por defecto para el nombre del proyecto. Si no, el nombre de la carpeta del repositorio |
 | `--template` | Escribe un archivo con marcadores `<...>` en lugar de preguntar |
 
@@ -143,7 +161,7 @@ treehouse numera los slots por repositorio, así que el mismo número aparece en
 
 ## f0 switch
 
-Muestra una lista numerada de sesiones de f0 y cambia a la que elijas. Dentro de tmux cambia el cliente actual; fuera, se conecta.
+Elige una sesión de f0 entre tarjetas como las de [`f0 launch`](#f0-launch), las usadas más recientemente primero, y cambia a ella. Dentro de tmux cambia el cliente actual; fuera, se conecta. Enter cambia, `/` filtra, y Esc o `q` salen sin cambiar.
 
 ## f0 stop
 
@@ -198,6 +216,7 @@ Revisa herramientas, valores globales, proyectos, las teclas de tmux y lo que im
 | `repo` y archivo de includes de cada proyecto | Sí |
 | El servidor de tmux en ejecución define la tecla que cierra una tarea (se omite sin servidor o con `[keys] done = false`) | Sí |
 | `gh`, `rg`, Ghostty | No |
+| `/Applications/f0.app`, distinguiéndola de otra app con ese nombre, y su configuración `~/.config/f0/ghostty.conf` | No |
 | Con la config de tmux incluida enlazada: tmux 3.8 o posterior, que el tema necesita | Sí |
 | Con la config de Ghostty incluida enlazada: ninguna línea `background`, `foreground`, `palette`, `cursor-*` o `selection-*` en otros archivos de config de Ghostty, que se listan con su archivo y línea | No |
 

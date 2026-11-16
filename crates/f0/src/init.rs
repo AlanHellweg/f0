@@ -1,4 +1,4 @@
-//! `f0 init`: asks about the repo you stand in and writes its project file.
+//! `f0 init`: asks about a repo and writes its project file.
 
 use std::fs;
 use std::io::{self, BufRead, IsTerminal, Write};
@@ -9,11 +9,13 @@ use crate::error::F0Error;
 use crate::git;
 use crate::prompt::{self, confirm, prompt};
 
-/// Asks in a terminal; writes the placeholder template with `template` or when stdin is
-/// not a terminal, so scripts never hang on a question.
-pub fn run(name: Option<&str>, template: bool) -> anyhow::Result<()> {
-    let cwd = std::env::current_dir()?;
-    let repo = git::main_repo_root(&cwd).map_err(|_| F0Error::NotARepo { path: cwd })?;
+/// Describes the repo that contains `dir`. Asks in a terminal; writes the placeholder
+/// template with `template` or when stdin is not a terminal, so scripts never hang on a
+/// question.
+pub fn run(dir: &Path, name: Option<&str>, template: bool) -> anyhow::Result<()> {
+    let repo = git::main_repo_root(dir).map_err(|_| F0Error::NotARepo {
+        path: dir.to_owned(),
+    })?;
     let repo = repo.canonicalize()?;
     let config_dir = config::config_dir()?;
     let defaults = config::load_defaults(&config_dir)?;
