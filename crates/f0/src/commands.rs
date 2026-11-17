@@ -1,10 +1,12 @@
-use std::io::{self, BufRead, Write};
+use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, bail};
 
 use crate::config::{self, Agent, Project};
 use crate::error::F0Error;
+use crate::tmux::{Attach, Session};
+use crate::treehouse::Slot;
 use crate::{appearance, git, layout, process, tmux, treehouse};
 
 pub fn new(
@@ -14,7 +16,7 @@ pub fn new(
     kind: Option<&str>,
     start: &[String],
     agent: Option<String>,
-    attach: bool,
+    attach: Attach,
 ) -> anyhow::Result<()> {
     require_treehouse()?;
 
@@ -100,7 +102,7 @@ pub fn open(
     target: Option<&str>,
     start: &[String],
     agent: Option<String>,
-    attach: bool,
+    attach: Attach,
 ) -> anyhow::Result<()> {
     require_treehouse()?;
     let config_dir = config::config_dir()?;
@@ -144,6 +146,82 @@ pub fn open(
     start_session(&project, &name, &root, start, true, attach)
 }
 
+/// A treehouse slot of a project, as `f0 ls` and the launcher show it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SlotRow {
+    pub project: String,
+    /// `<project>/<slot>`, unique across projects.
+    pub id: String,
+    /// The task, from the branch, or `(detached)`.
+    pub task: String,
+    /// Empty when the slot is detached.
+    pub branch: String,
+    pub status: String,
+    pub path: PathBuf,
+    /// The f0 session running in the slot, if any.
+    pub session: Option<Session>,
+}
+
+/// The slots of some projects, with what `f0 ls` says about the rest.
+#[derive(Debug, Default, PartialEq)]
+pub struct Slots {
+    pub rows: Vec<SlotRow>,
+    /// Projects with free slots and how many, when the free ones are left out.
+    pub free: Vec<(String, usize)>,
+    /// The projects treehouse could not list, with why.
+    pub errors: Vec<(String, String)>,
+}
+
+/// The slots in use of `projects`, or every slot with `all`, matched to `sessions`.
+pub fn slots(projects: &[Project], sessions: &[Session], all: bool) -> Slots {
+    slots_with(projects, sessions, all, treehouse::status)
+}
+
+/// `slots` with the call that lists the slots of a repo passed in, for tests.
+fn slots_with(
+    projects: &[Project],
+    sessions: &[Session],
+    all: bool,
+    status: impl Fn(&Path) -> Result<Vec<Slot>, F0Error>,
+) -> Slots {
+    let mut out = Slots::default();
+    for project in projects {
+        let slots = match status(&project.repo) {
+            Ok(slots) => slots,
+            Err(e) => {
+                out.errors.push((project.name.clone(), e.to_string()));
+                continue;
+            }
+        };
+        let available = slots.iter().filter(|s| s.status == "available").count();
+        if available > 0 && !all {
+            out.free.push((project.name.clone(), available));
+        }
+        for slot in slots {
+            if slot.status == "available" && !all {
+                continue;
+            }
+            let path = canonical(&slot.path).unwrap_or(slot.path);
+            let session = sessions.iter().find(|s| s.path == path).cloned();
+            let task = if slot.branch.is_empty() {
+                "(detached)".to_owned()
+            } else {
+                project.task_from_branch(&slot.branch).to_owned()
+            };
+            out.rows.push(SlotRow {
+                project: project.name.clone(),
+                id: slot_id(&project.name, &slot.name),
+                task,
+                branch: slot.branch,
+                status: slot.status,
+                path,
+                session,
+            });
+        }
+    }
+    out
+}
+
 /// Slots in use, one row each, named `<project>/<slot>`: treehouse numbers slots per
 /// repo, so the number alone repeats across projects.
 pub fn ls(all: bool, paths: bool) -> anyhow::Result<()> {
@@ -159,47 +237,22 @@ pub fn ls(all: bool, paths: bool) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let sessions = tmux::sessions()?;
-    let mut rows: Vec<Vec<String>> = Vec::new();
-    let mut free: Vec<(&str, usize)> = Vec::new();
-    for project in &projects {
-        let slots = match treehouse::status(&project.repo) {
-            Ok(slots) => slots,
-            Err(e) => {
-                eprintln!("{}: {e}", project.name);
-                continue;
-            }
-        };
-        let available = slots.iter().filter(|s| s.status == "available").count();
-        if available > 0 {
-            free.push((&project.name, available));
-        }
-        for slot in slots {
-            if slot.status == "available" && !all {
-                continue;
-            }
-            let path = canonical(&slot.path).unwrap_or(slot.path);
-            let session = sessions
-                .iter()
-                .find(|s| s.path == path)
-                .map_or_else(|| "-".to_owned(), |s| s.name.clone());
-            let task = if slot.branch.is_empty() {
-                "(detached)".to_owned()
-            } else {
-                project.task_from_branch(&slot.branch).to_owned()
-            };
-            let mut row = vec![
-                slot_id(&project.name, &slot.name),
-                task,
-                slot.status,
-                session,
-            ];
-            if paths {
-                row.push(path.display().to_string());
-            }
-            rows.push(row);
-        }
+    let listing = slots(&projects, &tmux::sessions()?, all);
+    for (project, error) in &listing.errors {
+        eprintln!("{project}: {error}");
     }
+    let rows: Vec<Vec<String>> = listing
+        .rows
+        .into_iter()
+        .map(|slot| {
+            let session = slot.session.map_or_else(|| "-".to_owned(), |s| s.name);
+            let mut row = vec![slot.id, slot.task, slot.status, session];
+            if paths {
+                row.push(slot.path.display().to_string());
+            }
+            row
+        })
+        .collect();
 
     if rows.is_empty() {
         println!("No tasks. Start one with `f0 new <ticket>`.");
@@ -210,8 +263,9 @@ pub fn ls(all: bool, paths: bool) -> anyhow::Result<()> {
         }
         print!("{}", format_table(&headers, &rows));
     }
-    if !all && !free.is_empty() {
-        let summary: Vec<_> = free
+    if !listing.free.is_empty() {
+        let summary: Vec<_> = listing
+            .free
             .iter()
             .map(|(project, count)| format!("{project} {count}"))
             .collect();
@@ -262,26 +316,7 @@ pub fn switch() -> anyhow::Result<()> {
         println!("No f0 sessions. Start a task with `f0 new <ticket>`.");
         return Ok(());
     }
-
-    for (index, session) in sessions.iter().enumerate() {
-        println!(
-            "{:>3}) {:<28} {}",
-            index + 1,
-            session.name,
-            session.path.display()
-        );
-    }
-    print!("Session: ");
-    io::stdout().flush()?;
-
-    let mut answer = String::new();
-    io::stdin().lock().read_line(&mut answer)?;
-    let choice: usize = answer.trim().parse().context("expected a session number")?;
-    let Some(session) = choice.checked_sub(1).and_then(|i| sessions.get(i)) else {
-        bail!("no session number {choice}");
-    };
-    tmux::attach(&session.name)?;
-    Ok(())
+    crate::launch::switch(sessions)
 }
 
 /// The job that closes a task from inside its session: it takes the client that asked
@@ -489,6 +524,28 @@ pub fn doctor() -> anyhow::Result<()> {
     problems += report("Ghostty", ghostty, false);
 
     let config_dir = config::config_dir()?;
+    println!("\nf0.app");
+    let app_id = process::output(
+        "defaults",
+        [
+            "read",
+            &format!("{APP}/Contents/Info"),
+            "CFBundleIdentifier",
+        ],
+        None,
+    )
+    .ok();
+    problems += report(
+        &app_check_label(app_id.as_deref()),
+        app_id.as_deref() == Some(APP_ID),
+        false,
+    );
+    let app_config = config_dir.join("ghostty.conf");
+    problems += report(
+        &format!("its Ghostty config {}", app_config.display()),
+        app_config.is_file(),
+        false,
+    );
     println!("\nDefaults ({})", config_dir.join("config.toml").display());
     let defaults = match config::load_defaults(&config_dir) {
         Ok(defaults) => defaults,
@@ -556,7 +613,7 @@ fn start_session(
     worktree: &Path,
     start: &[String],
     resume: bool,
-    attach: bool,
+    attach: Attach,
 ) -> anyhow::Result<()> {
     let layout = layout::build(project, worktree, start, resume);
     if let Err(e) = tmux::create_session(name, worktree, &layout) {
@@ -573,12 +630,11 @@ fn start_session(
     attach_if(name, attach)
 }
 
-fn attach_if(name: &str, attach: bool) -> anyhow::Result<()> {
-    if attach {
-        tmux::attach(name)?;
-    } else {
+fn attach_if(name: &str, attach: Attach) -> anyhow::Result<()> {
+    if attach == Attach::No {
         println!("{name}");
     }
+    tmux::attach(name, attach)?;
     Ok(())
 }
 
@@ -700,6 +756,19 @@ fn detached_task(worktree: &Path) -> String {
         .and_then(Path::file_name)
         .map_or_else(|| "detached".into(), |s| s.to_string_lossy());
     format!("slot-{slot}")
+}
+
+/// The app install.sh builds, and the bundle id that tells it from another app there.
+const APP: &str = "/Applications/f0.app";
+const APP_ID: &str = "com.falcondpr.f0";
+
+/// What `f0 doctor` says about `/Applications/f0.app`, given its bundle id.
+fn app_check_label(id: Option<&str>) -> String {
+    match id {
+        Some(APP_ID) => APP.to_owned(),
+        Some(other) => format!("{APP} is another app ({other}); move it and run install.sh"),
+        None => format!("{APP} missing, run install.sh to build it"),
+    }
 }
 
 /// Prints a check line and returns 1 when a required check failed.
@@ -838,6 +907,81 @@ mod tests {
     fn slot_ids_are_unique_across_projects() {
         assert_ne!(slot_id("hubi", "1"), slot_id("hubi-website", "1"));
         assert_eq!(slot_id("hubi", "4"), "hubi/4");
+    }
+
+    fn project(name: &str, repo: &str) -> Project {
+        Project::from_toml(
+            name,
+            &format!("repo = \"{repo}\""),
+            Path::new("p.toml"),
+            Path::new("/home/me"),
+            &config::Defaults::default(),
+        )
+        .unwrap()
+    }
+
+    fn slot(name: &str, status: &str, branch: &str) -> Slot {
+        Slot {
+            name: name.to_owned(),
+            path: PathBuf::from(format!("/pool/{name}/hubi")),
+            status: status.to_owned(),
+            branch: branch.to_owned(),
+            lease_holder: String::new(),
+        }
+    }
+
+    fn fake_status(repo: &Path) -> Result<Vec<Slot>, F0Error> {
+        match repo.to_str() {
+            Some("/src/hubi") => Ok(vec![
+                slot("1", "leased", "feature/HB-1"),
+                slot("2", "available", ""),
+                slot("3", "leased", ""),
+            ]),
+            _ => Err(F0Error::NotARepo {
+                path: repo.to_owned(),
+            }),
+        }
+    }
+
+    #[test]
+    fn slots_match_sessions_and_count_the_free_ones() {
+        let projects = [project("hubi", "/src/hubi"), project("gone", "/src/gone")];
+        let session = Session {
+            name: "hubi/HB-1".to_owned(),
+            path: PathBuf::from("/pool/1/hubi"),
+            activity: Some(10),
+        };
+        let listing = slots_with(
+            &projects,
+            std::slice::from_ref(&session),
+            false,
+            fake_status,
+        );
+        let ids: Vec<_> = listing.rows.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, ["hubi/1", "hubi/3"]);
+        assert_eq!(listing.rows[0].task, "HB-1");
+        assert_eq!(listing.rows[0].branch, "feature/HB-1");
+        assert_eq!(listing.rows[0].session, Some(session));
+        assert_eq!(listing.rows[1].task, "(detached)");
+        assert_eq!(listing.rows[1].session, None);
+        assert_eq!(listing.free, [("hubi".to_owned(), 1)]);
+        assert_eq!(listing.errors.len(), 1);
+        assert_eq!(listing.errors[0].0, "gone");
+    }
+
+    #[test]
+    fn all_slots_include_the_free_ones_without_a_summary() {
+        let projects = [project("hubi", "/src/hubi")];
+        let listing = slots_with(&projects, &[], true, fake_status);
+        assert_eq!(listing.rows.len(), 3);
+        assert!(listing.free.is_empty());
+    }
+
+    #[test]
+    fn app_check_tells_missing_from_foreign() {
+        assert_eq!(app_check_label(Some(APP_ID)), "/Applications/f0.app");
+        assert!(app_check_label(None).contains("run install.sh to build it"));
+        assert!(app_check_label(Some("org.wezfurlong.wezterm")).contains("another app"));
     }
 
     #[test]

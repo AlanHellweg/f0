@@ -17,6 +17,20 @@ const DEFAULT_SIZE: (u16, u16) = (240, 60);
 pub struct Session {
     pub name: String,
     pub path: PathBuf,
+    /// When a client last used the session, in seconds since the Unix epoch.
+    pub activity: Option<u64>,
+}
+
+/// What `f0 new` and `f0 open` do with the session once it is ready.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Attach {
+    /// Print the session name and leave it running in the background.
+    No,
+    /// Replace this process with `tmux attach`, as the CLI does.
+    Replace,
+    /// Run `tmux attach` as a child and return when it detaches or the session ends, so
+    /// the launcher can show its list again.
+    Wait,
 }
 
 pub fn session_name(project: &str, task: &str) -> String {
@@ -34,7 +48,7 @@ pub fn has_session(name: &str) -> bool {
 
 /// Sessions created by f0, identified by the worktree path stored on them.
 pub fn sessions() -> Result<Vec<Session>, F0Error> {
-    let format = format!("#{{session_name}}\t#{{{PATH_OPTION}}}");
+    let format = format!("#{{session_name}}\t#{{{PATH_OPTION}}}\t#{{session_activity}}");
     match process::output("tmux", ["list-sessions", "-F", &format], None) {
         Ok(out) => Ok(parse_sessions(&out)),
         Err(F0Error::CommandFailed { stderr, .. }) if is_no_server(&stderr) => Ok(Vec::new()),
@@ -428,20 +442,38 @@ pub fn kill_session(name: &str) -> Result<(), F0Error> {
     tmux(&["kill-session", "-t", &exact(name)]).map(drop)
 }
 
-/// Moves the current client to `name`, or replaces this process with `tmux attach`
-/// when running outside tmux.
-pub fn attach(name: &str) -> Result<(), F0Error> {
+/// Moves the current client to `name`, or attaches this terminal to it when running
+/// outside tmux: replacing this process with `tmux attach`, or with `Attach::Wait`
+/// waiting for it to end. `Attach::No` does nothing.
+pub fn attach(name: &str, mode: Attach) -> Result<(), F0Error> {
     let target = exact(name);
+    if mode == Attach::No {
+        return Ok(());
+    }
     if std::env::var_os("TMUX").is_some() {
         return tmux(&["switch-client", "-t", &target]).map(drop);
     }
-    let source = Command::new("tmux")
-        .args(["attach-session", "-t", &target])
-        .exec();
-    Err(F0Error::Spawn {
+    let mut command = Command::new("tmux");
+    command.args(["attach-session", "-t", &target]);
+    if mode == Attach::Replace {
+        let source = command.exec();
+        return Err(F0Error::Spawn {
+            program: "tmux".to_owned(),
+            source,
+        });
+    }
+    // Detaching, `f0 stop` and `f0 done` all end the client with success.
+    let status = command.status().map_err(|source| F0Error::Spawn {
         program: "tmux".to_owned(),
         source,
-    })
+    })?;
+    if !status.success() {
+        return Err(F0Error::CommandFailed {
+            command: format!("tmux attach-session -t {target}"),
+            stderr: format!("exited with {status}"),
+        });
+    }
+    Ok(())
 }
 
 fn tmux(args: &[&str]) -> Result<String, F0Error> {
@@ -490,10 +522,13 @@ fn is_no_server(stderr: &str) -> bool {
 fn parse_sessions(out: &str) -> Vec<Session> {
     out.lines()
         .filter_map(|line| {
-            let (name, path) = line.split_once('\t')?;
+            let mut fields = line.split('\t');
+            let (name, path) = (fields.next()?, fields.next()?);
+            let activity = fields.next().and_then(|field| field.parse().ok());
             (!path.is_empty()).then(|| Session {
                 name: name.to_owned(),
                 path: PathBuf::from(path),
+                activity,
             })
         })
         .collect()
@@ -594,13 +629,21 @@ mod tests {
 
     #[test]
     fn parses_only_f0_sessions() {
-        let out = "main\t\nhubi/HB-1\t/pool/1/hubi\nscratch\t";
+        let out = "main\t\t1700000000\nhubi/HB-1\t/pool/1/hubi\t1700000123\nscratch\t\t1\nold/x\t/pool/2/old";
         assert_eq!(
             parse_sessions(out),
-            [Session {
-                name: "hubi/HB-1".to_owned(),
-                path: PathBuf::from("/pool/1/hubi"),
-            }]
+            [
+                Session {
+                    name: "hubi/HB-1".to_owned(),
+                    path: PathBuf::from("/pool/1/hubi"),
+                    activity: Some(1_700_000_123),
+                },
+                Session {
+                    name: "old/x".to_owned(),
+                    path: PathBuf::from("/pool/2/old"),
+                    activity: None,
+                },
+            ]
         );
     }
 }

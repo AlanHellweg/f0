@@ -12,6 +12,7 @@ Location, first match wins: `$F0_CONFIG_DIR`, `$XDG_CONFIG_HOME/f0`, `~/.config/
 ```
 ~/.config/f0/
 ├── config.toml          global defaults
+├── ghostty.conf         the Ghostty config of f0.app, written by install.sh
 └── projects/
     └── my-app.toml      one file per project
 ```
@@ -59,6 +60,19 @@ done = "X"
 | `keys.done` | `"X"` | Opens a menu to close the task of the session it is pressed in: keeping its slot, like `f0 stop`, or returning it, like `f0 done`. Any tmux key name (`"Q"`, `"M-x"`); `false` turns it off |
 
 The status line of each f0 session shows the key, like `C-a X close task`. f0 never replaces a key your tmux config already binds to something else: `f0 keys` and `f0 doctor` tell you to pick another one.
+
+## Launcher
+
+`a` in [`f0 launch`](/reference/cli/#f0-launch) looks for repositories in `~/Desktop`, `~/Documents`, `~/Developer`, `~/code`, `~/dev`, `~/Projects` and `~/src`, skipping those that do not exist. Add more folders in `config.toml`; they are searched too.
+
+```toml
+[launch]
+folders = ["~/work", "/Volumes/Data/repos"]
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `launch.folders` | `[]` | More folders to look for repositories in, on top of the default ones |
 
 ## AI agent
 

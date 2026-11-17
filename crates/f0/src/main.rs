@@ -5,6 +5,7 @@ mod edit;
 mod error;
 mod git;
 mod init;
+mod launch;
 mod layout;
 mod process;
 mod prompt;
@@ -25,8 +26,10 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Cmd {
-    /// Create the project file for the repo in the current directory, asking about it.
+    /// Create the project file for a repo, asking about it.
     Init {
+        /// A folder inside the repo; defaults to the current directory.
+        path: Option<PathBuf>,
         /// Project name, used for the file and the sessions; defaults to the repo folder name.
         #[arg(long)]
         name: Option<String>,
@@ -87,6 +90,9 @@ enum Cmd {
         #[arg(long)]
         paths: bool,
     },
+    /// The home screen of f0.app: pick a project, then a task to open or start. Leaving
+    /// the task's session comes back to the list.
+    Launch,
     /// Pick an f0 session and switch to it.
     Switch,
     /// Close a slot's session and return the slot to the pool. Inside that session it asks
@@ -116,7 +122,17 @@ enum Cmd {
 
 fn main() -> anyhow::Result<()> {
     match Cli::parse().command {
-        Cmd::Init { name, template } => init::run(name.as_deref(), template),
+        Cmd::Init {
+            path,
+            name,
+            template,
+        } => {
+            let dir = match path {
+                Some(path) => path,
+                None => std::env::current_dir()?,
+            };
+            init::run(&dir, name.as_deref(), template)
+        }
         Cmd::Edit { project } => edit::run(project.as_deref()),
         Cmd::New {
             ticket,
@@ -133,20 +149,30 @@ fn main() -> anyhow::Result<()> {
             kind.as_deref(),
             &start,
             agent,
-            !no_attach,
+            attach_mode(no_attach),
         ),
         Cmd::Open {
             slot,
             start,
             agent,
             no_attach,
-        } => commands::open(slot.as_deref(), &start, agent, !no_attach),
+        } => commands::open(slot.as_deref(), &start, agent, attach_mode(no_attach)),
         Cmd::Ls { all, paths } => commands::ls(all, paths),
+        Cmd::Launch => launch::run(),
         Cmd::Switch => commands::switch(),
         Cmd::Done { slot, force } => commands::done(slot.as_deref(), force),
         Cmd::Stop { slot } => commands::stop(slot.as_deref()),
         Cmd::CloseMenu { slot } => commands::close_menu(&slot),
         Cmd::Keys => commands::keys(),
         Cmd::Doctor => commands::doctor(),
+    }
+}
+
+/// The CLI replaces itself with `tmux attach` unless told not to attach.
+fn attach_mode(no_attach: bool) -> tmux::Attach {
+    if no_attach {
+        tmux::Attach::No
+    } else {
+        tmux::Attach::Replace
     }
 }

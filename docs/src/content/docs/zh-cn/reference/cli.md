@@ -11,16 +11,34 @@ f0 <command> [options]
 
 运行 `f0 <command> --help` 可以在终端中看到相同的信息。
 
-## f0 init
+## f0 launch
 
-为你所在的仓库创建项目文件，过程中会询问相关信息。
+显示 f0 的主屏幕：你的项目，然后是你所选项目的任务。[f0.app](/zh-cn/getting-started/installation/#f0app) 在每个窗口中运行它，它也可以在任何其他终端中使用。
 
 ```bash
-f0 init [--name <name>] [--template]
+f0 launch
+```
+
+项目和任务以卡片形式显示，选中的卡片使用强调色边框。项目卡片显示任务数量；任务卡片显示分支，以及它是运行中（`●`，并显示上次使用时间）还是已停止（`○`：slot 已租用，但没有会话）。所有按键见[快捷键](/zh-cn/reference/keybindings/#启动器)。
+
+- **在任务上按 Enter** 会像 `f0 open` 一样打开它并连接到它的会话。通过 detach（`Ctrl-a d`）、`f0 stop` 或 `f0 done` 离开会话后，会回到项目列表，并选中该项目。
+- **`n`** 询问 ticket，并像 `f0 new` 一样开始任务。
+- **`a`**（在项目列表中）在[搜索目录](/zh-cn/reference/configuration/#启动器)中最多向下三层查找尚未成为项目的 git 仓库，跳过 `node_modules`、`target`、隐藏目录和 treehouse slot。在某个仓库上按 Enter 会为它运行 `f0 init` 的问题，`p` 可以输入搜索没有找到的仓库目录。
+- **`q`** 退出启动器，这会关闭 f0.app 的窗口。启动器不提供进入独立 shell 的方式。
+
+在 tmux 中运行时，它会拒绝并提示使用 `f0 switch`：在 tmux 窗格中运行启动器会嵌套会话。
+
+## f0 init
+
+为一个仓库创建项目文件，过程中会询问相关信息。
+
+```bash
+f0 init [path] [--name <name>] [--template]
 ```
 
 | 参数 | 含义 |
 |---|---|
+| `[path]` | 仓库内的某个目录。默认为当前目录 |
 | `--name` | 项目名称的默认答案。否则使用仓库目录名 |
 | `--template` | 不询问，直接写入带有 `<...>` 占位符的文件 |
 
@@ -143,7 +161,7 @@ treehouse 按仓库为 slot 编号，所以同一个编号会出现在多个项�
 
 ## f0 switch
 
-显示一个带编号的 f0 会话列表，并切换到你选中的那个。在 tmux 中会切换当前客户端；在 tmux 外则连接到该会话。
+从与 [`f0 launch`](#f0-launch) 相同样式的卡片中选择一个 f0 会话（最近使用的排在前面）并切换过去。在 tmux 中会切换当前客户端；在 tmux 外则连接到该会话。Enter 切换，`/` 过滤，Esc 或 `q` 不切换直接退出。
 
 ## f0 stop
 
@@ -198,6 +216,7 @@ f0 keys
 | 每个项目的 `repo` 和 worktree include 文件 | 是 |
 | 正在运行的 tmux 服务器绑定了关闭任务的按键（没有服务器或设置了 `[keys] done = false` 时跳过） | 是 |
 | `gh`、`rg`、Ghostty | 否 |
+| `/Applications/f0.app`（会区分同名的其他应用）及其配置 `~/.config/f0/ghostty.conf` | 否 |
 | 链接了内置 tmux 配置时：tmux 3.8 或更高版本，主题需要它 | 是 |
 | 链接了内置 Ghostty 配置时：其他 Ghostty 配置文件中没有 `background`、`foreground`、`palette`、`cursor-*` 或 `selection-*` 行，有的话会列出其文件和行号 | 否 |
 

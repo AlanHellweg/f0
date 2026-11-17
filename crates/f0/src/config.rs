@@ -69,6 +69,43 @@ struct GlobalFile {
     defaults: Defaults,
     #[serde(default)]
     keys: Keys,
+    #[serde(default)]
+    launch: Launch,
+}
+
+/// Where `f0 launch` looks for repos to add, before the `~` in each folder is expanded.
+pub const DEFAULT_SEARCH_FOLDERS: [&str; 7] = [
+    "~/Desktop",
+    "~/Documents",
+    "~/Developer",
+    "~/code",
+    "~/dev",
+    "~/Projects",
+    "~/src",
+];
+
+/// The `[launch]` table of `config.toml`.
+#[derive(Debug, Clone, Default, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Launch {
+    /// More folders to look for repos in, on top of `DEFAULT_SEARCH_FOLDERS`.
+    pub folders: Vec<String>,
+}
+
+impl Launch {
+    /// The default folders and then the configured ones, with `~` expanded and without
+    /// repeats.
+    pub fn search_folders(&self, home: &Path) -> Vec<PathBuf> {
+        let mut folders: Vec<PathBuf> = Vec::new();
+        let configured = self.folders.iter().map(String::as_str);
+        for raw in DEFAULT_SEARCH_FOLDERS.into_iter().chain(configured) {
+            let folder = expand_home(raw, home);
+            if !folders.contains(&folder) {
+                folders.push(folder);
+            }
+        }
+        folders
+    }
 }
 
 /// tmux keys f0 binds after the prefix. Key tables belong to the tmux server, so they
@@ -615,6 +652,10 @@ pub fn load_keys(config_dir: &Path) -> Result<Keys, F0Error> {
     Ok(load_global(config_dir)?.keys)
 }
 
+pub fn load_launch(config_dir: &Path) -> Result<Launch, F0Error> {
+    Ok(load_global(config_dir)?.launch)
+}
+
 fn load_global(config_dir: &Path) -> Result<GlobalFile, F0Error> {
     let path = config_dir.join("config.toml");
     let source = match fs::read_to_string(&path) {
@@ -927,6 +968,29 @@ mod tests {
         ] {
             assert!(keys(&format!("[keys]\n{bad}")).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn configured_search_folders_add_to_the_defaults() {
+        let path = Path::new("config.toml");
+        let home = Path::new("/home/me");
+        let folders = |source: &str| {
+            parse_global(source, path)
+                .unwrap()
+                .launch
+                .search_folders(home)
+        };
+        let defaults = folders("");
+        assert_eq!(defaults.len(), DEFAULT_SEARCH_FOLDERS.len());
+        assert_eq!(defaults[0], PathBuf::from("/home/me/Desktop"));
+
+        let more = folders("[launch]\nfolders = [\"~/work\", \"/srv/git\", \"~/Desktop\"]");
+        assert_eq!(more.len(), DEFAULT_SEARCH_FOLDERS.len() + 2);
+        assert_eq!(
+            more[more.len() - 2..],
+            [PathBuf::from("/home/me/work"), PathBuf::from("/srv/git")]
+        );
+        assert!(parse_global("[launch]\nfolder = []", path).is_err());
     }
 
     #[test]

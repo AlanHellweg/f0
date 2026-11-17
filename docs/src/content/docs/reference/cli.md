@@ -11,16 +11,34 @@ f0 <command> [options]
 
 Run `f0 <command> --help` for the same information in the terminal.
 
-## f0 init
+## f0 launch
 
-Create the project file for the repository you are in, asking about it.
+Show f0's home screen: your projects, then the tasks of the one you pick. [f0.app](/getting-started/installation/#f0app) runs it in every window, and it works in any other terminal too.
 
 ```bash
-f0 init [--name <name>] [--template]
+f0 launch
+```
+
+Projects and tasks show as cards, with the selected one outlined in the accent color. A project card counts its tasks; a task card shows its branch and whether it is running (`●`, with when you last used it) or stopped (`○`: the slot is leased, without a session). See [Key bindings](/reference/keybindings/#launcher) for every key.
+
+- **Enter on a task** opens it like `f0 open` and attaches to its session. Leaving the session, by detaching (`Ctrl-a d`), with `f0 stop` or with `f0 done`, brings back the list of projects, with that project selected.
+- **`n`** asks for a ticket and starts the task like `f0 new`.
+- **`a`**, on the projects, looks for git repositories that are not projects yet, up to three folders deep in the [search folders](/reference/configuration/#launcher), skipping `node_modules`, `target`, hidden folders and treehouse slots. Enter on one runs the questions of `f0 init` for it, and `p` takes the folder of one the search missed.
+- **`q`** leaves the launcher, which closes the window of f0.app. The launcher has no way out to a plain shell.
+
+Run inside tmux, it refuses and points to `f0 switch`: a launcher in a tmux pane would nest sessions.
+
+## f0 init
+
+Create the project file for a repository, asking about it.
+
+```bash
+f0 init [path] [--name <name>] [--template]
 ```
 
 | Argument | Meaning |
 |---|---|
+| `[path]` | A folder inside the repository. Defaults to the current directory |
 | `--name` | Default answer for the project name. Otherwise the repository folder name |
 | `--template` | Write a file with `<...>` placeholders instead of asking |
 
@@ -143,7 +161,7 @@ treehouse numbers slots per repository, so the same number shows up in several p
 
 ## f0 switch
 
-Show a numbered list of f0 sessions and switch to the one you pick. Inside tmux it switches the current client; outside, it attaches.
+Pick an f0 session from cards like those of [`f0 launch`](#f0-launch), most recently used first, and switch to it. Inside tmux it switches the current client; outside, it attaches. Enter switches, `/` filters, and Esc or `q` leaves without switching.
 
 ## f0 stop
 
@@ -198,6 +216,7 @@ Check tools, global defaults, project configs, the tmux keys and what keeps the 
 | Each project's `repo` and worktree include file | Yes |
 | The running tmux server binds the key that closes a task (skipped with no server or with `[keys] done = false`) | Yes |
 | `gh`, `rg`, Ghostty | No |
+| `/Applications/f0.app`, telling it from another app with that name, and its config `~/.config/f0/ghostty.conf` | No |
 | With the bundled tmux config linked: tmux 3.8 or later, which the theme needs | Yes |
 | With the bundled Ghostty config linked: no `background`, `foreground`, `palette`, `cursor-*` or `selection-*` lines in other Ghostty config files, listed with their file and line | No |
 

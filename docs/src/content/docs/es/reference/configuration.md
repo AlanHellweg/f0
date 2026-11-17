@@ -12,6 +12,7 @@ Ubicación, gana la primera que exista: `$F0_CONFIG_DIR`, `$XDG_CONFIG_HOME/f0`,
 ```
 ~/.config/f0/
 ├── config.toml          valores globales
+├── ghostty.conf         la configuración de Ghostty de f0.app, escrita por install.sh
 └── projects/
     └── my-app.toml      un archivo por proyecto
 ```
@@ -59,6 +60,19 @@ done = "X"
 | `keys.done` | `"X"` | Abre un menú para cerrar la tarea de la sesión donde se aprieta: conservando su slot, como `f0 stop`, o devolviéndolo, como `f0 done`. Cualquier nombre de tecla de tmux (`"Q"`, `"M-x"`); `false` la desactiva |
 
 La barra de estado de cada sesión de f0 muestra la tecla, como `C-a X close task`. f0 nunca reemplaza una tecla que tu configuración de tmux ya usa para otra cosa: `f0 keys` y `f0 doctor` te piden elegir otra.
+
+## Launcher
+
+`a` en [`f0 launch`](/es/reference/cli/#f0-launch) busca repositorios en `~/Desktop`, `~/Documents`, `~/Developer`, `~/code`, `~/dev`, `~/Projects` y `~/src`, salteando las que no existen. Agrega más carpetas en `config.toml`; también se buscan.
+
+```toml
+[launch]
+folders = ["~/trabajo", "/Volumes/Datos/repos"]
+```
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `launch.folders` | `[]` | Más carpetas donde buscar repositorios, además de las de por defecto |
 
 ## Agente de IA
 
